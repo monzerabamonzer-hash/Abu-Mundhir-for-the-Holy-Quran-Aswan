@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مركز المنذر للدراسات القرآنية - نظام الإدارة وقاعدة البيانات</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        islamic: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        gold: {
+                            500: '#d97706',
+                            600: '#b45309',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 left-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- Top Navbar -->
+    <header class="bg-islamic-800 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-gold-500 p-2 rounded-xl text-white shadow">
+                    <i class="fa-solid fa-quran text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">مركز المنذر للدراسات القرآنية</h1>
+                    <p class="text-xs text-islamic-200">نظام الإدارة وقاعدة البيانات الشاملة</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-xs bg-islamic-700 px-3 py-1.5 rounded-full border border-islamic-600 hidden sm:inline-block">
+                    <i class="fa-regular fa-calendar-days ml-1"></i> <span id="current-date"></span>
+                </span>
+                <button onclick="app.resetData()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition shadow">
+                    <i class="fa-solid fa-rotate-right ml-1"></i> إعادة ضبط البيانات
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Layout Container -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full flex flex-col md:flex-row gap-6">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 bg-white rounded-2xl shadow-sm border border-gray-100 p-4 shrink-0 h-fit">
+            <nav class="space-y-1.5">
+                <button onclick="app.switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition text-right tab-btn bg-islamic-50 text-islamic-800">
+                    <i class="fa-solid fa-chart-pie w-5 text-center text-lg"></i> لوحة المؤشرات
+                </button>
+                <button onclick="app.switchTab('students')" id="nav-students" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition text-right tab-btn text-gray-600 hover:bg-gray-50">
+                    <i class="fa-solid fa-user-graduate w-5 text-center text-lg"></i> إدارة الطلاب
+                </button>
+                <button onclick="app.switchTab('teachers')" id="nav-teachers" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition text-right tab-btn text-gray-600 hover:bg-gray-50">
+                    <i class="fa-solid fa-chalkboard-user w-5 text-center text-lg"></i> إدارة المعلمين
+                </button>
+                <button onclick="app.switchTab('circles')" id="nav-circles" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition text-right tab-btn text-gray-600 hover:bg-gray-50">
+                    <i class="fa-solid fa-people-roof w-5 text-center text-lg"></i> الحلقات القرآنية
+                </button>
+                <button onclick="app.switchTab('progress')" id="nav-progress" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition text-right tab-btn text-gray-600 hover:bg-gray-50">
+                    <i class="fa-solid fa-book-open-reader w-5 text-center text-lg"></i> متابعة التسميع والحفظ
+                </button>
+                <button onclick="app.switchTab('attendance')" id="nav-attendance" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition text-right tab-btn text-gray-600 hover:bg-gray-50">
+                    <i class="fa-solid fa-clipboard-user w-5 text-center text-lg"></i> سجل الحضور والغياب
+                </button>
+            </nav>
+            <div class="mt-8 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
+                نسخة تجريبية محلية متكاملة <br>جميع البيانات محفوظة على جهازك
+            </div>
+        </aside>
+
+        <!-- Dynamic Content Area -->
+        <main class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            
+            <!-- 1. DASHBOARD TAB -->
+            <div id="tab-dashboard" class="tab-content fade-in space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">لوحة المؤشرات العامة</h2>
+                        <p class="text-xs text-gray-500">نظرة سريعة على إحصائيات مركز المنذر للدراسات القرآنية</p>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-islamic-50 border border-islamic-100 p-5 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-islamic-700">إجمالي الطلاب</p>
+                            <h3 class="text-2xl font-black text-islamic-900 mt-1" id="stat-students">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-islamic-600 text-white rounded-xl flex items-center justify-center text-xl shadow-sm">
+                            <i class="fa-solid fa-user-graduate"></i>
+                        </div>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-100 p-5 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-amber-700">إجمالي المعلمين</p>
+                            <h3 class="text-2xl font-black text-amber-900 mt-1" id="stat-teachers">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-amber-600 text-white rounded-xl flex items-center justify-center text-xl shadow-sm">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-100 p-5 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-blue-700">الحلقات النشطة</p>
+                            <h3 class="text-2xl font-black text-blue-900 mt-1" id="stat-circles">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center text-xl shadow-sm">
+                            <i class="fa-solid fa-people-roof"></i>
+                        </div>
+                    </div>
+                    <div class="bg-purple-50 border border-purple-100 p-5 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-purple-700">أجزاء محفوظة (إجمالي)</p>
+                            <h3 class="text-2xl font-black text-purple-900 mt-1" id="stat-juz">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-600 text-white rounded-xl flex items-center justify-center text-xl shadow-sm">
+                            <i class="fa-solid fa-book-quran"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Recent Activity -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <div class="bg-gray-50 border border-gray-100 p-5 rounded-2xl">
+                        <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-bolt text-gold-500"></i> اختصارات سريعة
+                        </h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="app.switchTab('students'); app.openStudentModal();" class="p-3 bg-white hover:bg-islamic-50 border border-gray-200 hover:border-islamic-200 rounded-xl text-right transition flex items-center gap-3">
+                                <i class="fa-solid fa-user-plus text-islamic-600 text-lg"></i>
+                                <div>
+                                    <div class="font-bold text-sm">إضافة طالب جديد</div>
+                                    <div class="text-xs text-gray-400">سجل طالب بالتحفيظ</div>
+                                </div>
+                            </button>
+                            <button onclick="app.switchTab('progress'); app.openProgressModal();" class="p-3 bg-white hover:bg-islamic-50 border border-gray-200 hover:border-islamic-200 rounded-xl text-right transition flex items-center gap-3">
+                                <i class="fa-solid fa-pen-to-square text-islamic-600 text-lg"></i>
+                                <div>
+                                    <div class="font-bold text-sm">تسجيل تسميع</div>
+                                    <div class="text-xs text-gray-400">حفظ أو مراجعة يومية</div>
+                                </div>
+                            </button>
+                            <button onclick="app.switchTab('teachers'); app.openTeacherModal();" class="p-3 bg-white hover:bg-islamic-50 border border-gray-200 hover:border-islamic-200 rounded-xl text-right transition flex items-center gap-3">
+                                <i class="fa-solid fa-user-tie text-amber-600 text-lg"></i>
+                                <div>
+                                    <div class="font-bold text-sm">إضافة معلم</div>
+                                    <div class="text-xs text-gray-400">تسجيل محفظ جديد</div>
+                                </div>
+                            </button>
+                            <button onclick="app.switchTab('circles'); app.openCircleModal();" class="p-3 bg-white hover:bg-islamic-50 border border-gray-200 hover:border-islamic-200 rounded-xl text-right transition flex items-center gap-3">
+                                <i class="fa-solid fa-circle-plus text-blue-600 text-lg"></i>
+                                <div>
+                                    <div class="font-bold text-sm">تأسيس حلقة</div>
+                                    <div class="text-xs text-gray-400">إضافة حلقة قرآنية</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 border border-gray-100 p-5 rounded-2xl">
+                        <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info text-islamic-600"></i> إرشادات الاستخدام
+                        </h3>
+                        <ul class="space-y-2 text-xs text-gray-600 leading-relaxed">
+                            <li class="flex items-start gap-2">
+                                <i class="fa-solid fa-check text-islamic-600 mt-0.5"></i>
+                                <span>ابدأ أولاً بإضافة <strong>المعلمين</strong> ثم قم بإنشاء <strong>الحلقات</strong> وربط المعلم بكل حلقة.</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fa-solid fa-check text-islamic-600 mt-0.5"></i>
+                                <span>قم بإضافة <strong>الطلاب</strong> وحدد الحلقة المناسبة لكل طالب لتنظيم المتابعة بدقة.</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fa-solid fa-check text-islamic-600 mt-0.5"></i>
+                                <span>استخدم قسم <strong>متابعة الحفظ</strong> لتسجيل ما حفظه الطالب يومياً (السورة، الأجزاء، والتقييم).</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. STUDENTS TAB -->
+            <div id="tab-students" class="tab-content hidden fade-in space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">إدارة طلاب التحفيظ</h2>
+                        <p class="text-xs text-gray-500">قائمة الطلاب المسجلين وبياناتهم الشخصية والحلقات التابعين لها</p>
+                    </div>
+                    <button onclick="app.openStudentModal()" class="bg-islamic-600 hover:bg-islamic-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow transition flex items-center gap-2 w-fit">
+                        <i class="fa-solid fa-user-plus"></i> إضافة طالب جديد
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <i class="fa-solid fa-magnifying-glass text-gray-400 mr-2"></i>
+                    <input type="text" id="search-student" oninput="app.filterStudents()" placeholder="ابحث باسم الطالب أو ولي الأمر أو رقم الهاتف..." class="w-full bg-transparent text-sm focus:outline-none">
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-gray-50 text-gray-600 border-b border-gray-200">
+                            <tr>
+                                <th class="p-3 rounded-r-xl">اسم الطالب</th>
+                                <th class="p-3">العمر</th>
+                                <th class="p-3">رقم ولي الأمر</th>
+                                <th class="p-3">الحلقة</th>
+                                <th class="p-3">المستوى</th>
+                                <th class="p-3 rounded-l-xl text-center">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-table-body" class="divide-y divide-gray-100">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. TEACHERS TAB -->
+            <div id="tab-teachers" class="tab-content hidden fade-in space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">إدارة المعلمين والمحفظين</h2>
+                        <p class="text-xs text-gray-500">أساتذة الحلقات القرآنية وبيانات الاتصال والخبرات</p>
+                    </div>
+                    <button onclick="app.openTeacherModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow transition flex items-center gap-2 w-fit">
+                        <i class="fa-solid fa-chalkboard-user"></i> إضافة معلم جديد
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-gray-50 text-gray-600 border-b border-gray-200">
+                            <tr>
+                                <th class="p-3 rounded-r-xl">اسم المعلم</th>
+                                <th class="p-3">رقم الجوال</th>
+                                <th class="p-3">التخصص / القراءات</th>
+                                <th class="p-3">الحلقة المكلف بها</th>
+                                <th class="p-3 rounded-l-xl text-center">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teachers-table-body" class="divide-y divide-gray-100">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4. CIRCLES TAB -->
+            <div id="tab-circles" class="tab-content hidden fade-in space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">الحلقات القرآنية</h2>
+                        <p class="text-xs text-gray-500">تنظيم حلقات التحفيظ وأوقات الانعقاد والمعلمين المشرفين</p>
+                    </div>
+                    <button onclick="app.openCircleModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow transition flex items-center gap-2 w-fit">
+                        <i class="fa-solid fa-circle-plus"></i> تأسيس حلقة جديدة
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="circles-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- 5. PROGRESS TAB -->
+            <div id="tab-progress" class="tab-content hidden fade-in space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">سجل التسميع ومتابعة الحفظ</h2>
+                        <p class="text-xs text-gray-500">تسجيل ومتابعة حفظ القرآن الكريم والمراجعة والتقييم اليومي</p>
+                    </div>
+                    <button onclick="app.openProgressModal()" class="bg-islamic-600 hover:bg-islamic-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow transition flex items-center gap-2 w-fit">
+                        <i class="fa-solid fa-pen-to-square"></i> تسجيل تسميع جديد
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-gray-50 text-gray-600 border-b border-gray-200">
+                            <tr>
+                                <th class="p-3 rounded-r-xl">التاريخ</th>
+                                <th class="p-3">الطالب</th>
+                                <th class="p-3">نوع التسميع</th>
+                                <th class="p-3">المقدار (من - إلى / السورة)</th>
+                                <th class="p-3">التقييم</th>
+                                <th class="p-3 rounded-l-xl text-center">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="progress-table-body" class="divide-y divide-gray-100">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 6. ATTENDANCE TAB -->
+            <div id="tab-attendance" class="tab-content hidden fade-in space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">سجل الحضور والغياب اليومي</h2>
+                        <p class="text-xs text-gray-500">تسجيل حضور وانصراف الطلاب للحلقات القرآنية</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input type="date" id="attendance-date" onchange="app.loadAttendanceList()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none">
+                        <button onclick="app.saveAttendance()" class="bg-islamic-600 hover:bg-islamic-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow transition">
+                            <i class="fa-solid fa-floppy-disk ml-1"></i> حفظ السجل
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm">
+                        <thead class="bg-gray-50 text-gray-600 border-b border-gray-200">
+                            <tr>
+                                <th class="p-3 rounded-r-xl">اسم الطالب</th>
+                                <th class="p-3">الحلقة</th>
+                                <th class="p-3 text-center">حاضر</th>
+                                <th class="p-3 text-center">غائب</th>
+                                <th class="p-3 text-center rounded-l-xl">متأخر</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table-body" class="divide-y divide-gray-100">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODALS CONTAINER -->
+    
+    <!-- Student Modal -->
+    <div id="modal-student" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl fade-in">
+            <h3 class="font-bold text-lg text-gray-800 mb-4" id="student-modal-title">إضافة طالب جديد</h3>
+            <form id="form-student" onsubmit="app.saveStudent(event)" class="space-y-4">
+                <input type="hidden" id="student-id">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">اسم الطالب الرباعي</label>
+                    <input type="text" id="student-name" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-islamic-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">العمر</label>
+                        <input type="number" id="student-age" required min="4" max="80" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-islamic-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">المستوى الحالي</label>
+                        <select id="student-level" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-islamic-500">
+                            <option value="مبتدئ">مبتدئ (قاعدة نورانية)</option>
+                            <option value="متوسط">متوسط (جزء عم / تبارك)</option>
+                            <option value="متقدم">متقدم (حافظ للقرآن)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">رقم هاتف ولي الأمر</label>
+                    <input type="text" id="student-phone" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-islamic-500" placeholder="05xxxxxxxx">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">الحلقة القرآنية</label>
+                    <select id="student-circle" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-islamic-500">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="app.closeModal('modal-student')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold transition">إلغاء</button>
+                    <button type="submit" class="bg-islamic-600 hover:bg-islamic-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">حفظ الطالب</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Teacher Modal -->
+    <div id="modal-teacher" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl fade-in">
+            <h3 class="font-bold text-lg text-gray-800 mb-4" id="teacher-modal-title">إضافة معلم جديد</h3>
+            <form id="form-teacher" onsubmit="app.saveTeacher(event)" class="space-y-4">
+                <input type="hidden" id="teacher-id">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">اسم المعلم الكامل</label>
+                    <input type="text" id="teacher-name" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">رقم الجوال</label>
+                    <input type="text" id="teacher-phone" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500" placeholder="05xxxxxxxx">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">التخصص / الإجازات / القراءات</label>
+                    <input type="text" id="teacher-specialty" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500" placeholder="مثال: مجاز برواية حفص عن عاصم">
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="app.closeModal('modal-teacher')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold transition">إلغاء</button>
+                    <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">حفظ المعلم</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Circle Modal -->
+    <div id="modal-circle" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl fade-in">
+            <h3 class="font-bold text-lg text-gray-800 mb-4" id="circle-modal-title">تأسيس حلقة جديدة</h3>
+            <form id="form-circle" onsubmit="app.saveCircle(event)" class="space-y-4">
+                <input type="hidden" id="circle-id">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">اسم الحلقة</label>
+                    <input type="text" id="circle-name" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="مثال: حلقة الإمام نافع">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">المعلم المشرف</label>
+                    <select id="circle-teacher" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">الوقت / الفترة</label>
+                    <input type="text" id="circle-time" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="مثال: العصر (4:00 - 6:00 مساءً)">
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="app.closeModal('modal-circle')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold transition">إلغاء</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">حفظ الحلقة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div id="modal-progress" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl fade-in">
+            <h3 class="font-bold text-lg text-gray-800 mb-4">تسجيل تسميع جديد</h3>
+            <form id="form-progress" onsubmit="app.saveProgress(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">الطالب</label>
+                    <select id="prog-student" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-islamic-500">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">نوع التسميع</label>
+                        <select id="prog-type" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-islamic-500">
+                            <option value="حفظ جديد">حفظ جديد</option>
+                            <option value="مراجعة قريبة">مراجعة قريبة</option>
+                            <option value="مراجعة كبرى">مراجعة كبرى</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">التقييم</label>
+                        <select id="prog-grade" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-islamic-500">
+                            <option value="ممتاز">ممتاز ⭐⭐⭐</option>
+                            <option value="جيد جداً">جيد جداً ⭐⭐</option>
+                            <option value="جيد">جيد ⭐</option>
+                            <option value="يحتاج لإعادة">يحتاج لإعادة ⚠️</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">تفاصيل المقدار (السورة / الآيات / الأجزاء)</label>
+                    <input type="text" id="prog-details" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-islamic-500" placeholder="مثال: سورة البقرة من الآية 1 إلى 25">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">تاريخ التسميع</label>
+                    <input type="date" id="prog-date" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-islamic-500">
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="app.closeModal('modal-progress')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold transition">إلغاء</button>
+                    <button type="submit" class="bg-islamic-600 hover:bg-islamic-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">حفظ التسميع</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        class QuranOfficeApp {
+            constructor() {
+                this.loadData();
+                this.initApp();
+            }
+
+            loadData() {
+                this.students = JSON.parse(localStorage.getItem('quran_students')) || [
+                    { id: '1', name: 'أحمد محمد العبدالله', age: 12, phone: '0501234567', circle: 'حلقة النور', level: 'متوسط' },
+                    { id: '2', name: 'عمر خالد السعيد', age: 10, phone: '0507654321', circle: 'حلقة الضياء', level: 'مبتدئ' }
+                ];
+                this.teachers = JSON.parse(localStorage.getItem('quran_teachers')) || [
+                    { id: '1', name: 'الشيخ إبراهيم الأنصاري', phone: '0551112233', specialty: 'مجاز بالقراءات العشر' },
+                    { id: '2', name: 'الشيخ محمود الشامي', phone: '0554445566', specialty: 'مجاز برواية حفص' }
+                ];
+                this.circles = JSON.parse(localStorage.getItem('quran_circles')) || [
+                    { id: '1', name: 'حلقة النور', teacher: 'الشيخ إبراهيم الأنصاري', time: 'بعد صلاة العصر' },
+                    { id: '2', name: 'حلقة الضياء', teacher: 'الشيخ محمود الشامي', time: 'بعد صلاة المغرب' }
+                ];
+                this.progress = JSON.parse(localStorage.getItem('quran_progress')) || [
+                    { id: '1', studentId: '1', studentName: 'أحمد محمد العبدالله', type: 'حفظ جديد', details: 'سورة البقرة (1-15)', grade: 'ممتاز', date: new Date().toISOString().split('T')[0] }
+                ];
+                this.attendance = JSON.parse(localStorage.getItem('quran_attendance')) || {};
+            }
+
+            saveToLocalStorage() {
+                localStorage.setItem('quran_students', JSON.stringify(this.students));
+                localStorage.setItem('quran_teachers', JSON.stringify(this.teachers));
+                localStorage.setItem('quran_circles', JSON.stringify(this.circles));
+                localStorage.setItem('quran_progress', JSON.stringify(this.progress));
+                localStorage.setItem('quran_attendance', JSON.stringify(this.attendance));
+            }
+
+            initApp() {
+                // Set today's date in header & inputs
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('current-date').innerText = new Intl.DateTimeFormat('ar-SA', { dateStyle: 'full' }).format(new Date());
+                document.getElementById('attendance-date').value = today;
+                document.getElementById('prog-date').value = today;
+
+                this.renderAll();
+            }
+
+            renderAll() {
+                this.renderDashboard();
+                this.renderStudents();
+                this.renderTeachers();
+                this.renderCircles();
+                this.renderProgress();
+                this.loadAttendanceList();
+                this.updateDropdowns();
+            }
+
+            switchTab(tabId) {
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.tab-btn').forEach(el => {
+                    el.classList.remove('bg-islamic-50', 'text-islamic-800');
+                    el.classList.add('text-gray-600', 'hover:bg-gray-50');
+                });
+
+                document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+                const activeBtn = document.getElementById(`nav-${tabId}`);
+                activeBtn.classList.remove('text-gray-600', 'hover:bg-gray-50');
+                activeBtn.classList.add('bg-islamic-50', 'text-islamic-800');
+            }
+
+            showToast(message, type = 'success') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `p-4 rounded-xl text-white text-sm font-semibold shadow-lg flex items-center gap-3 transition transform translate-y-2 opacity-0 ${type === 'success' ? 'bg-islamic-700' : 'bg-red-600'}`;
+                toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-lg' : 'fa-circle-exclamation text-lg'}"></i> <span>${message}</span>`;
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-2', 'opacity-0');
+                }, 10);
+
+                setTimeout(() => {
+                    toast.classList.add('translate-y-2', 'opacity-0');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            resetData() {
+                if (confirm('هل أنت متأكد من إعادة ضبط البيانات؟ سيتم مسح التعديلات.')) {
+                    localStorage.clear();
+                    this.loadData();
+                    this.renderAll();
+                    this.showToast('تمت إعادة ضبط النظام بنجاح', 'success');
+                }
+            }
+
+            // --- DASHBOARD ---
+            renderDashboard() {
+                document.getElementById('stat-students').innerText = this.students.length;
+                document.getElementById('stat-teachers').innerText = this.teachers.length;
+                document.getElementById('stat-circles').innerText = this.circles.length;
+                document.getElementById('stat-juz').innerText = this.progress.length * 2; // تقديري
+            }
+
+            // --- STUDENTS ---
+            renderStudents(filteredList = null) {
+                const list = filteredList || this.students;
+                const tbody = document.getElementById('students-table-body');
+                if (list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400">لا توجد بيانات طلاب مسجلة</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = list.map(s => `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="p-3 font-semibold text-gray-800">${s.name}</td>
+                        <td class="p-3">${s.age} سنة</td>
+                        <td class="p-3 font-mono">${s.phone}</td>
+                        <td class="p-3"><span class="bg-islamic-50 text-islamic-700 px-2.5 py-1 rounded-lg text-xs font-bold">${s.circle || 'غير محدد'}</span></td>
+                        <td class="p-3"><span class="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg text-xs font-bold">${s.level}</span></td>
+                        <td class="p-3 text-center space-x-2 space-x-reverse">
+                            <button onclick="app.editStudent('${s.id}')" class="text-blue-600 hover:text-blue-800 p-1.5"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="app.deleteStudent('${s.id}')" class="text-red-600 hover:text-red-800 p-1.5"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            filterStudents() {
+                const query = document.getElementById('search-student').value.toLowerCase();
+                const filtered = this.students.filter(s => s.name.toLowerCase().includes(query) || s.phone.includes(query));
+                this.renderStudents(filtered);
+            }
+
+            openStudentModal(id = null) {
+                document.getElementById('form-student').reset();
+                document.getElementById('student-id').value = '';
+                document.getElementById('student-modal-title').innerText = 'إضافة طالب جديد';
+                
+                if (id) {
+                    const student = this.students.find(s => s.id === id);
+                    if (student) {
+                        document.getElementById('student-id').value = student.id;
+                        document.getElementById('student-name').value = student.name;
+                        document.getElementById('student-age').value = student.age;
+                        document.getElementById('student-phone').value = student.phone;
+                        document.getElementById('student-level').value = student.level;
+                        document.getElementById('student-circle').value = student.circle;
+                        document.getElementById('student-modal-title').innerText = 'تعديل بيانات الطالب';
+                    }
+                }
+                document.getElementById('modal-student').classList.remove('hidden');
+            }
+
+            saveStudent(e) {
+                e.preventDefault();
+                const id = document.getElementById('student-id').value;
+                const studentData = {
+                    id: id || Date.now().toString(),
+                    name: document.getElementById('student-name').value,
+                    age: document.getElementById('student-age').value,
+                    phone: document.getElementById('student-phone').value,
+                    level: document.getElementById('student-level').value,
+                    circle: document.getElementById('student-circle').value
+                };
+
+                if (id) {
+                    const index = this.students.findIndex(s => s.id === id);
+                    this.students[index] = studentData;
+                    this.showToast('تم تحديث بيانات الطالب بنجاح');
+                } else {
+                    this.students.push(studentData);
+                    this.showToast('تمت إضافة الطالب بنجاح');
+                }
+
+                this.saveToLocalStorage();
+                this.renderAll();
+                this.closeModal('modal-student');
+            }
+
+            editStudent(id) { this.openStudentModal(id); }
+
+            deleteStudent(id) {
+                if (confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
+                    this.students = this.students.filter(s => s.id !== id);
+                    this.saveToLocalStorage();
+                    this.renderAll();
+                    this.showToast('تم حذف الطالب بنجاح');
+                }
+            }
+
+            // --- TEACHERS ---
+            renderTeachers() {
+                const tbody = document.getElementById('teachers-table-body');
+                if (this.teachers.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-gray-400">لا توجد بيانات معلمين مسجلة</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = this.teachers.map(t => {
+                    const assignedCircle = this.circles.find(c => c.teacher === t.name);
+                    return `
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="p-3 font-semibold text-gray-800">${t.name}</td>
+                            <td class="p-3 font-mono">${t.phone}</td>
+                            <td class="p-3"><span class="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg text-xs font-bold">${t.specialty}</span></td>
+                            <td class="p-3"><span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-bold">${assignedCircle ? assignedCircle.name : 'غير مكلف'}</span></td>
+                            <td class="p-3 text-center space-x-2 space-x-reverse">
+                                <button onclick="app.editTeacher('${t.id}')" class="text-blue-600 hover:text-blue-800 p-1.5"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="app.deleteTeacher('${t.id}')" class="text-red-600 hover:text-red-800 p-1.5"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            openTeacherModal(id = null) {
+                document.getElementById('form-teacher').reset();
+                document.getElementById('teacher-id').value = '';
+                document.getElementById('teacher-modal-title').innerText = 'إضافة معلم جديد';
+
+                if (id) {
+                    const teacher = this.teachers.find(t => t.id === id);
+                    if (teacher) {
+                        document.getElementById('teacher-id').value = teacher.id;
+                        document.getElementById('teacher-name').value = teacher.name;
+                        document.getElementById('teacher-phone').value = teacher.phone;
+                        document.getElementById('teacher-specialty').value = teacher.specialty;
+                        document.getElementById('teacher-modal-title').innerText = 'تعديل بيانات المعلم';
+                    }
+                }
+                document.getElementById('modal-teacher').classList.remove('hidden');
+            }
+
+            saveTeacher(e) {
+                e.preventDefault();
+                const id = document.getElementById('teacher-id').value;
+                const teacherData = {
+                    id: id || Date.now().toString(),
+                    name: document.getElementById('teacher-name').value,
+                    phone: document.getElementById('teacher-phone').value,
+                    specialty: document.getElementById('teacher-specialty').value
+                };
+
+                if (id) {
+                    const index = this.teachers.findIndex(t => t.id === id);
+                    this.teachers[index] = teacherData;
+                    this.showToast('تم تحديث بيانات المعلم بنجاح');
+                } else {
+                    this.teachers.push(teacherData);
+                    this.showToast('تمت إضافة المعلم بنجاح');
+                }
+
+                this.saveToLocalStorage();
+                this.renderAll();
+                this.closeModal('modal-teacher');
+            }
+
+            editTeacher(id) { this.openTeacherModal(id); }
+
+            deleteTeacher(id) {
+                if (confirm('هل أنت متأكد من حذف هذا المعلم؟')) {
+                    this.teachers = this.teachers.filter(t => t.id !== id);
+                    this.saveToLocalStorage();
+                    this.renderAll();
+                    this.showToast('تم حذف المعلم بنجاح');
+                }
+            }
+
+            // --- CIRCLES ---
+            renderCircles() {
+                const grid = document.getElementById('circles-grid');
+                if (this.circles.length === 0) {
+                    grid.innerHTML = `<div class="col-span-full text-center py-8 text-gray-400">لا توجد حلقات قرآنية مؤسسة حالياً</div>`;
+                    return;
+                }
+                grid.innerHTML = this.circles.map(c => {
+                    const studentCount = this.students.filter(s => s.circle === c.name).length;
+                    return `
+                        <div class="bg-gray-50 border border-gray-100 p-5 rounded-2xl flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-bold text-base text-gray-800">${c.name}</h3>
+                                    <div class="space-x-1 space-x-reverse">
+                                        <button onclick="app.editCircle('${c.id}')" class="text-blue-600 hover:text-blue-800 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+                                        <button onclick="app.deleteCircle('${c.id}')" class="text-red-600 hover:text-red-800 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </div>
+                                <div class="space-y-2 text-xs text-gray-600">
+                                    <p class="flex items-center gap-2"><i class="fa-solid fa-chalkboard-user text-amber-600 w-4"></i> <strong>المعلم:</strong> ${c.teacher}</p>
+                                    <p class="flex items-center gap-2"><i class="fa-regular fa-clock text-blue-600 w-4"></i> <strong>الموعد:</strong> ${c.time}</p>
+                                    <p class="flex items-center gap-2"><i class="fa-solid fa-user-group text-islamic-600 w-4"></i> <strong>عدد الطلاب:</strong> ${studentCount} طالب</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            openCircleModal(id = null) {
+                document.getElementById('form-circle').reset();
+                document.getElementById('circle-id').value = '';
+                document.getElementById('circle-modal-title').innerText = 'تأسيس حلقة جديدة';
+
+                if (id) {
+                    const circle = this.circles.find(c => c.id === id);
+                    if (circle) {
+                        document.getElementById('circle-id').value = circle.id;
+                        document.getElementById('circle-name').value = circle.name;
+                        document.getElementById('circle-teacher').value = circle.teacher;
+                        document.getElementById('circle-time').value = circle.time;
+                        document.getElementById('circle-modal-title').innerText = 'تعديل بيانات الحلقة';
+                    }
+                }
+                document.getElementById('modal-circle').classList.remove('hidden');
+            }
+
+            saveCircle(e) {
+                e.preventDefault();
+                const id = document.getElementById('circle-id').value;
+                const circleData = {
+                    id: id || Date.now().toString(),
+                    name: document.getElementById('circle-name').value,
+                    teacher: document.getElementById('circle-teacher').value,
+                    time: document.getElementById('circle-time').value
+                };
+
+                if (id) {
+                    const index = this.circles.findIndex(c => c.id === id);
+                    this.circles[index] = circleData;
+                    this.showToast('تم تحديث الحلقة بنجاح');
+                } else {
+                    this.circles.push(circleData);
+                    this.showToast('تمت تأسيس الحلقة بنجاح');
+                }
+
+                this.saveToLocalStorage();
+                this.renderAll();
+                this.closeModal('modal-circle');
+            }
+
+            editCircle(id) { this.openCircleModal(id); }
+
+            deleteCircle(id) {
+                if (confirm('هل أنت متأكد من حذف هذه الحلقة؟')) {
+                    this.circles = this.circles.filter(c => c.id !== id);
+                    this.saveToLocalStorage();
+                    this.renderAll();
+                    this.showToast('تم حذف الحلقة بنجاح');
+                }
+            }
+
+            // --- PROGRESS ---
+            renderProgress() {
+                const tbody = document.getElementById('progress-table-body');
+                if (this.progress.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400">لا توجد سجلات تسميع حديثة</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = this.progress.map(p => `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="p-3 font-mono text-xs">${p.date}</td>
+                        <td class="p-3 font-semibold text-gray-800">${p.studentName}</td>
+                        <td class="p-3"><span class="bg-islamic-50 text-islamic-700 px-2.5 py-1 rounded-lg text-xs font-bold">${p.type}</span></td>
+                        <td class="p-3 text-gray-600">${p.details}</td>
+                        <td class="p-3"><span class="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg text-xs font-bold">${p.grade}</span></td>
+                        <td class="p-3 text-center">
+                            <button onclick="app.deleteProgress('${p.id}')" class="text-red-600 hover:text-red-800 p-1.5"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            openProgressModal() {
+                document.getElementById('form-progress').reset();
+                document.getElementById('prog-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('modal-progress').classList.remove('hidden');
+            }
+
+            saveProgress(e) {
+                e.preventDefault();
+                const studentSelect = document.getElementById('prog-student');
+                const studentId = studentSelect.value;
+                const studentName = studentSelect.options[studentSelect.selectedIndex].text;
+
+                const progressData = {
+                    id: Date.now().toString(),
+                    studentId,
+                    studentName,
+                    type: document.getElementById('prog-type').value,
+                    details: document.getElementById('prog-details').value,
+                    grade: document.getElementById('prog-grade').value,
+                    date: document.getElementById('prog-date').value
+                };
+
+                this.progress.unshift(progressData);
+                this.saveToLocalStorage();
+                this.renderProgress();
+                this.closeModal('modal-progress');
+                this.showToast('تم تسجيل التسميع بنجاح');
+            }
+
+            deleteProgress(id) {
+                if (confirm('هل أنت متأكد من حذف هذا السجل؟')) {
+                    this.progress = this.progress.filter(p => p.id !== id);
+                    this.saveToLocalStorage();
+                    this.renderProgress();
+                    this.showToast('تم حذف السجل بنجاح');
+                }
+            }
+
+            // --- ATTENDANCE ---
+            loadAttendanceList() {
+                const date = document.getElementById('attendance-date').value;
+                const tbody = document.getElementById('attendance-table-body');
+                
+                if (this.students.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-gray-400">لا يوجد طلاب مسجلين لتسجيل الحضور</td></tr>`;
+                    return;
+                }
+
+                const dayData = (this.attendance && this.attendance[date]) || {};
+
+                tbody.innerHTML = this.students.map(s => {
+                    const status = dayData[s.id] || 'present';
+                    return `
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="p-3 font-semibold text-gray-800">${s.name}</td>
+                            <td class="p-3 text-gray-600">${s.circle || 'غير محدد'}</td>
+                            <td class="p-3 text-center">
+                                <input type="radio" name="att_${s.id}" value="present" ${status === 'present' ? 'checked' : ''} class="w-4 h-4 text-islamic-600 focus:ring-islamic-500">
+                            </td>
+                            <td class="p-3 text-center">
+                                <input type="radio" name="att_${s.id}" value="absent" ${status === 'absent' ? 'checked' : ''} class="w-4 h-4 text-red-600 focus:ring-red-500">
+                            </td>
+                            <td class="p-3 text-center">
+                                <input type="radio" name="att_${s.id}" value="late" ${status === 'late' ? 'checked' : ''} class="w-4 h-4 text-amber-600 focus:ring-amber-500">
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            saveAttendance() {
+                const date = document.getElementById('attendance-date').value;
+                if (!this.attendance) this.attendance = {};
+                const dayData = {};
+
+                this.students.forEach(s => {
+                    const radios = document.querySelectorAll(`input[name="att_${s.id}"]`);
+                    radios.forEach(r => {
+                        if (r.checked) dayData[s.id] = r.value;
+                    });
+                });
+
+                this.attendance[date] = dayData;
+                this.saveToLocalStorage();
+                this.showToast('تم حفظ سجل الحضور والغياب بنجاح');
+            }
+
+            // --- UTILS ---
+            updateDropdowns() {
+                // Circles dropdown in student modal
+                const studentCircleSelect = document.getElementById('student-circle');
+                studentCircleSelect.innerHTML = this.circles.length ? this.circles.map(c => `<option value="${c.name}">${c.name}</option>`).join('') : '<option value="">لا توجد حلقات متاحة</option>';
+
+                // Teachers dropdown in circle modal
+                const circleTeacherSelect = document.getElementById('circle-teacher');
+                circleTeacherSelect.innerHTML = this.teachers.length ? this.teachers.map(t => `<option value="${t.name}">${t.name} (${t.specialty})</option>`).join('') : '<option value="">لا توجد معلمين متاحين</option>';
+
+                // Students dropdown in progress modal
+                const progStudentSelect = document.getElementById('prog-student');
+                progStudentSelect.innerHTML = this.students.length ? this.students.map(s => `<option value="${s.id}">${s.name} - ${s.circle || 'بدون حلقة'}</option>`).join('') : '<option value="">لا توجد طلاب مسجلين</option>';
+            }
+
+            closeModal(modalId) {
+                document.getElementById(modalId).classList.add('hidden');
+            }
+        }
+
+        const app = new QuranOfficeApp();
+    </script>
+</body>
+</html>
